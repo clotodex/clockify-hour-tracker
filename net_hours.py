@@ -11,7 +11,7 @@ import json
 import os
 import subprocess
 import sys
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 import yaml
@@ -54,6 +54,9 @@ def main(
     client_name: str,
     project_list: List[str],
     whitelist: bool = False,
+    holidays_country: Optional[str] = None,
+    holidays_prov: Optional[str] = None,
+    holidays_state: Optional[str] = None,
 ):
 
     start_date = to_date(start_date)
@@ -140,8 +143,21 @@ def main(
 
     print(f"hours worked: {hours_worked}")
 
+    holiday_hours = 0
+    h = None
+    if holidays_country is not None:
+        import holidays
+
+        h = holidays.CountryHoliday(
+            holidays_country, prov=holidays_prov, state=holidays_state
+        )
+        holiday_count = len(h[start_date : datetime.datetime.now()])
+        print(f"holidays: {holiday_count}")
+        holiday_hours = holiday_count / 5 * weekly_hours
+        print(f"holiday hours: {holiday_hours}")
+
     # hours I should have worked from start_date to now
-    hours_goal = weeks * weekly_hours
+    hours_goal = weeks * weekly_hours - holiday_hours
     print(f"hours goal: {hours_goal}")
 
     # how many hours I should have worked
@@ -149,14 +165,11 @@ def main(
     print(f"NET hours: {hours_net}")
 
     # how many hours I should have worked until the end of the year
-    hours_left = (
-        (
-            datetime.datetime(datetime.datetime.today().year, 12, 31)
-            - datetime.datetime.now()
-        ).days
-        / 7
-        * weekly_hours
-    )
+    end_of_year = datetime.datetime(datetime.datetime.today().year, 12, 31)
+    now = datetime.datetime.now()
+    hours_left = (end_of_year - now).days / 7 * weekly_hours
+    if h is not None:
+        hours_left -= len(h[now:end_of_year]) / 5 * weekly_hours
     print(f"Hours until end of year: {hours_left}")
     print(f"NET hours until end of year: {hours_left + hours_net}")
 
@@ -172,6 +185,9 @@ if __name__ == "__main__":
         "client": "Your Client",
         "project_list": [],
         "whitelist": False,
+        "holiday_country": None,
+        "holiday_prov": None,
+        "holiday_state": None,
     }
     if not os.path.isfile("config.yaml"):
         print("config.yaml does not exist, creating new one")
@@ -201,6 +217,24 @@ if __name__ == "__main__":
         "--project-list", type=str, nargs="*", default=config["project_list"]
     )
     parser.add_argument("--whitelist", action="store_true", default=config["whitelist"])
+    parser.add_argument(
+        "--holidays-country",
+        type=str,
+        default=config["holiday_country"],
+        help="2 letters for the country (see holidays library)",
+    )
+    parser.add_argument(
+        "--holidays-prov",
+        type=str,
+        default=config["holiday_prov"],
+        help="Province shortform (see holidays library)",
+    )
+    parser.add_argument(
+        "--holidays-state",
+        type=str,
+        default=config["holiday_state"],
+        help="State shortform (see holidays library)",
+    )
     args = parser.parse_args()
 
     for k, v in config.items():
@@ -216,4 +250,7 @@ if __name__ == "__main__":
         client_name=args.client,
         project_list=args.project_list,
         whitelist=args.whitelist,
+        holidays_country=args.holidays_country,
+        holidays_prov=args.holidays_prov,
+        holidays_state=args.holidays_state,
     )
