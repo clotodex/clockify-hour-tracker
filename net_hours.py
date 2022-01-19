@@ -202,7 +202,7 @@ if __name__ == "__main__":
         default_config[key] = config[key]
     config = default_config
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser("Clockify hour tracker")
     parser.add_argument("--weekly-hours", type=float, default=config["weekly_hours"])
     parser.add_argument(
         "--start-date", type=str, default=config["start_date"], help="dd/mm/YYYY"
