@@ -8,6 +8,7 @@ curl -H "content-type: application/json" -H "X-Api-Key: yourAPIkey" -X GET https
 import argparse
 import datetime
 import json
+import os
 import subprocess
 import sys
 from typing import List
@@ -161,14 +162,52 @@ def main(
 
 
 if __name__ == "__main__":
+    # load config "config.yaml" and override with values passed as args
+    # first checks if file exists:
+
+    default_config = {
+        "weekly_hours": 20,
+        "start_date": "01/01/2022",
+        "workspace": None,
+        "client": "Your Client",
+        "project_list": [],
+        "whitelist": False,
+    }
+    if not os.path.isfile("config.yaml"):
+        print("config.yaml does not exist, creating new one")
+        with open("config.yaml", "w") as f:
+            f.write(yaml.dump(default_config, default_flow_style=False))
+        print("config.yaml created")
+
+    with open("config.yaml") as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+
+    for key in config:
+        default_config[key] = config[key]
+    config = default_config
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--weekly-hours", type=float, default=40)
-    parser.add_argument("--start-date", type=str, help="dd/mm/YYYY")
-    parser.add_argument("--workspace", type=str, help="Your Workspace")
-    parser.add_argument("--client", type=str, help="Your Client")
-    parser.add_argument("--project-list", type=str, nargs="*", default=[])
-    parser.add_argument("--whitelist", action="store_true")
+    parser.add_argument("--weekly-hours", type=float, default=config["weekly_hours"])
+    parser.add_argument(
+        "--start-date", type=str, default=config["start_date"], help="dd/mm/YYYY"
+    )
+    parser.add_argument(
+        "--workspace", type=str, default=config["workspace"], help="Your Workspace"
+    )
+    parser.add_argument(
+        "--client", type=str, default=config["client"], help="Your Client"
+    )
+    parser.add_argument(
+        "--project-list", type=str, nargs="*", default=config["project_list"]
+    )
+    parser.add_argument("--whitelist", action="store_true", default=config["whitelist"])
     args = parser.parse_args()
+
+    for k, v in config.items():
+        if getattr(args, k, None) is not None:
+            config[k] = getattr(args, k)
+
+    print(config)
 
     main(
         weekly_hours=args.weekly_hours,
