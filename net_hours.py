@@ -139,14 +139,18 @@ def main(
     print()
     # weeks (in float) between start_date and now
     weeks = (datetime.datetime.now() - start_date).days / 7
-    print(f"weeks worked: {weeks}")
+    print(f"weeks worked: {weeks:.2f}")
 
-    print(f"hours worked: {hours_worked}")
+    print(f"hours worked: {hours_worked:.2f}")
 
     holiday_hours = 0
     h = None
     if holidays_country is not None:
-        import holidays
+        try:
+            import holidays
+        except:
+            print(f"holidays library could not be imported")
+            exit(1)
 
         h = holidays.CountryHoliday(
             holidays_country, prov=holidays_prov, state=holidays_state
@@ -158,11 +162,11 @@ def main(
 
     # hours I should have worked from start_date to now
     hours_goal = weeks * weekly_hours - holiday_hours
-    print(f"hours goal: {hours_goal}")
+    print(f"hours goal: {hours_goal:.2f}")
 
     # how many hours I should have worked
     hours_net = hours_goal - hours_worked
-    print(f"NET hours: {hours_net}")
+    print(f"NET hours: {hours_net:.2f}")
 
     # how many hours I should have worked until the end of the year
     end_of_year = datetime.datetime(datetime.datetime.today().year, 12, 31)
@@ -170,8 +174,8 @@ def main(
     hours_left = (end_of_year - now).days / 7 * weekly_hours
     if h is not None:
         hours_left -= len(h[now:end_of_year]) / 5 * weekly_hours
-    print(f"Hours until end of year: {hours_left}")
-    print(f"NET hours until end of year: {hours_left + hours_net}")
+    print(f"Hours until end of year: {hours_left:.2f}")
+    print(f"NET hours until end of year: {hours_left + hours_net:.2f}")
 
 
 if __name__ == "__main__":
