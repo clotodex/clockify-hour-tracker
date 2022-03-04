@@ -57,6 +57,7 @@ def main(
     holidays_country: Optional[str] = None,
     holidays_prov: Optional[str] = None,
     holidays_state: Optional[str] = None,
+    vacation_days_taken: int = 0,
 ):
 
     start_date = to_date(start_date)
@@ -160,8 +161,12 @@ def main(
         holiday_hours = holiday_count / 5 * weekly_hours
         print(f"holiday hours: {holiday_hours}")
 
+    vacation_hours = vacation_days_taken * weekly_hours / 5
+    if vacation_hours:
+        print(f"vacation hours: {vacation_hours}")
+
     # hours I should have worked from start_date to now
-    hours_goal = weeks * weekly_hours - holiday_hours
+    hours_goal = weeks * weekly_hours - holiday_hours - vacation_hours
     print(f"hours goal: {hours_goal:.2f}")
 
     # how many hours I should have worked
@@ -192,6 +197,7 @@ if __name__ == "__main__":
         "holiday_country": None,
         "holiday_prov": None,
         "holiday_state": None,
+        "vacation_days_taken": 0,
     }
     if not os.path.isfile("config.yaml"):
         print("config.yaml does not exist, creating new one")
@@ -239,6 +245,12 @@ if __name__ == "__main__":
         default=config["holiday_state"],
         help="State shortform (see holidays library)",
     )
+    parser.add_argument(
+        "--vacation-days-taken",
+        type=int,
+        default=config["vacation_days_taken"],
+        help="number of days taken off",
+    )
     args = parser.parse_args()
 
     for k, v in config.items():
@@ -257,4 +269,5 @@ if __name__ == "__main__":
         holidays_country=args.holidays_country,
         holidays_prov=args.holidays_prov,
         holidays_state=args.holidays_state,
+        vacation_days_taken=args.vacation_days_taken,
     )
